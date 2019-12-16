@@ -31,16 +31,18 @@ void setup() {
     return; // don't continue
   }
   Serial.println("DETECTED");
+  digitalWrite(ledpin, LOW);
+  Serial.print("Attempting to connect to Network named: ");
+  Serial.println(ssid);  
   // attempt to connect to Wifi network:
   while ( status != WL_CONNECTED) {
-    digitalWrite(ledpin, LOW);
-    Serial.print("Attempting to connect to Network named: ");
-    Serial.println(ssid);                   // print the network name (SSID);
-    digitalWrite(ledpin, HIGH);
-    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
-    status = WiFi.begin(ssid, pass);
-    // wait 10 seconds for connection:
-    delay(10000);
+   // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
+   digitalWrite(ledpin, LOW);
+   status = WiFi.begin(ssid, pass);
+   delay(500);
+   Serial.print(".");
+   digitalWrite(ledpin, HIGH);
+   delay(500);
   }
   server.begin();                           // start the web server on port 80
   printWifiStatus();                        // you're connected now, so print out the status
