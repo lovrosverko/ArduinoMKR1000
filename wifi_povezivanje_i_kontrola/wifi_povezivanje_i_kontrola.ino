@@ -3,13 +3,14 @@
 #include <WiFiServer.h>
 #include <WiFiSSLClient.h>
 #include <WiFiUdp.h>
+#include <SPI.h>
  
 /*
  * This example is modified from the original file 
  * https://github.com/arduino-libraries/WiFi101/blob/master/examples/SimpleWebServerWiFi/SimpleWebServerWiFi.ino
  */
-#include <SPI.h>
-#include <WiFi101.h>
+
+
  
 char ssid[] = "yourNetworkSSID";      //  your network SSID (name)
 char pass[] = "yourNetworkPassword";   // your network password
