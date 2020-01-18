@@ -3,19 +3,23 @@
 #include <WiFiServer.h>
 #include <WiFiSSLClient.h>
 #include <WiFiUdp.h>
-#include <SPI.h>
- 
-/*
+/* Tony Canning 2018/5/6
+ * Derivative from Dr. Charif Mahmoudi's work here:
+ * https://www.hackster.io/charifmahmoudi/arduino-mkr1000-getting-started-08bb4a
+ * Where he notes:
  * This example is modified from the original file 
  * https://github.com/arduino-libraries/WiFi101/blob/master/examples/SimpleWebServerWiFi/SimpleWebServerWiFi.ino
  */
-
-
+#include <SPI.h>
+#include <WiFi101.h>
  
-char ssid[] = "yourNetworkSSID";      //  your network SSID (name)
-char pass[] = "yourNetworkPassword";   // your network password
-int keyIndex = 0;                 // your network key Index number (needed only for WEP)
-int ledpin = 6;
+char ssid[] = "3D print";       //  your network SSID (name)
+char pass[] = "123456789";   // your network password
+int keyIndex = 0;               // your network key Index number (needed only for WEP)
+int ledpin = 6;           //The built in LED pin on the MKR1000
+int vibepin = 5;          //A pin to which an LED will be connected for  
+int brightness = 0;       // how bright the LED is
+int fadeAmount = 17;      // how many points to fade the LED by
 bool val = true;
  
 int status = WL_IDLE_STATUS;
@@ -25,6 +29,8 @@ void setup() {
   Serial.begin(9600);      // initialize serial communication
   Serial.print("Start Serial ");
   pinMode(ledpin, OUTPUT);      // set the LED pin mode
+  pinMode(vibepin, OUTPUT);      // set the LED pin mode
+
   // Check for the presence of the shield
   Serial.print("WiFi101 shield: ");
   if (WiFi.status() == WL_NO_SHIELD) {
@@ -32,22 +38,21 @@ void setup() {
     return; // don't continue
   }
   Serial.println("DETECTED");
-  digitalWrite(ledpin, LOW);
-  Serial.print("Attempting to connect to Network named: ");
-  Serial.println(ssid);  
   // attempt to connect to Wifi network:
   while ( status != WL_CONNECTED) {
-   // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
-   digitalWrite(ledpin, LOW);
-   status = WiFi.begin(ssid, pass);
-   delay(500);
-   Serial.print(".");
-   digitalWrite(ledpin, HIGH);
-   delay(500);
+    digitalWrite(ledpin, LOW);
+    Serial.print("Attempting to connect to Network named: ");
+    Serial.println(ssid);                   // print the network name (SSID);
+    digitalWrite(ledpin, HIGH);
+    // Connect to WPA/WPA2 network. Change this line if using open or WEP network:
+    status = WiFi.begin(ssid, pass);
+    // wait 10 seconds for connection:
+    delay(10000);
   }
   server.begin();                           // start the web server on port 80
   printWifiStatus();                        // you're connected now, so print out the status
   digitalWrite(ledpin, HIGH);
+
 }
 void loop() {
   WiFiClient client = server.available();   // listen for incoming clients
@@ -71,9 +76,17 @@ void loop() {
             client.println();
  
             // the content of the HTTP response follows the header:
-            client.print("Click <a href=\"/H\">here</a> turn the LED on pin 9 on<br>");
-            client.print("Click <a href=\"/L\">here</a> turn the LED on pin 9 off<br>");
- 
+            client.print("Klikni <a href=\"/H-btn\">OVDJE</a> za UKLJUČITI ledicu.<br>");
+            client.print("Klikni <a href=\"/L-btn\">OVDJE</a> za ISKLJUČITI ledicu.<br>");
+            client.print("Klikći više puta <a href=\"/H-vibe\">OVDJE</a>  za postepeno uključivanje i isključivanje LEDice<br>");
+            
+/*          The above provides a web page hosted by the MKR1000
+            You can connect to it by pointing a web browser to the IP address
+            which will be displayed in serial monitor.
+            If you add more sensors to the client MKR you can add more
+            browser controls here - Strictly, none of these are necessary 
+            for the MKRs to work with each other. VERY handy for troubleshooting.
+ */
             // The HTTP response ends with another blank line:
             client.println();
             // break out of the while loop:
@@ -87,13 +100,18 @@ void loop() {
           currentLine += c;      // add it to the end of the currentLine
         }
  
-        // Check to see if the client request was "GET /H" or "GET /L":
-        if (currentLine.endsWith("GET /H")) {
-          digitalWrite(ledpin, HIGH);               // GET /H turns the LED on
+        // Check to see what the client request was:
+
+        if (currentLine.endsWith("GET /H-btn")) {
+          digitalWrite(ledpin, HIGH);               // GET /H-btn turns the built in LED on
         }
-        if (currentLine.endsWith("GET /L")) {
-          digitalWrite(ledpin, LOW);                // GET /L turns the LED off
+        if (currentLine.endsWith("GET /L-btn")) {
+          digitalWrite(ledpin, LOW);                // GET /L-btn turns the built in LED off
         }
+        if (currentLine.endsWith("GET /H-vibe")) {
+          pulse();                                  // GET /H-vibe sends new brightness level to pin 5 LED (see void pulse() below)
+        }
+
       }
     }
     // close the connection:
@@ -101,7 +119,21 @@ void loop() {
     Serial.println("client disonnected");
   }
 }
- 
+
+
+void pulse() {
+          analogWrite(vibepin, brightness);
+          brightness = brightness + fadeAmount;
+
+          if (brightness <= 0 || brightness >= 255) {
+           fadeAmount = -fadeAmount;
+           }
+/*          This is using the example "Fade" code to send 
+ *          a new value for brightness to pin 5.
+ */
+           
+}
+           
 void printWifiStatus() {
   // print the SSID of the network you're attached to:
   Serial.print("SSID: ");
